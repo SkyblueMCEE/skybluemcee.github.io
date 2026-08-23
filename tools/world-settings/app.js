@@ -463,6 +463,7 @@
           state.worldName = loaded[0];
           state.experiments = buildExperimentRows(experimentsOf(doc.root));
           state.settings = readWorldSettings(doc.root);
+          if (isHardcore()) enforceHardcore();
           state.packs = loaded[1];
           state.activeSection = "world-setup";
           el.zone.classList.remove("is-loading");
@@ -513,12 +514,12 @@
   }
 
   function isHardcore() {
-    var setting = settingByKey("hardcore");
+    var setting = settingByKey("IsHardcore");
     return !!(setting && setting.value);
   }
 
   function enforceHardcore() {
-    var values = { GameType: 0, Difficulty: 3, commandsEnabled: false };
+    var values = { GameType: 0, Difficulty: 3, commandsEnabled: false, ForceGameType: true };
     Object.keys(values).forEach(function (key) {
       var setting = settingByKey(key);
       if (setting) setting.value = values[key];
@@ -526,7 +527,7 @@
   }
 
   function settingIsLocked(setting) {
-    return isHardcore() && ["GameType", "Difficulty", "commandsEnabled"].indexOf(setting.key) !== -1;
+    return isHardcore() && ["GameType", "Difficulty", "commandsEnabled", "ForceGameType"].indexOf(setting.key) !== -1;
   }
 
   function packChanged(pack) {
@@ -619,7 +620,7 @@
     if (locked) input.title = "Turn off Hardcore before changing this setting.";
     input.addEventListener("change", function () {
       setting.value = input.checked;
-      if (setting.key === "hardcore" && setting.value) enforceHardcore();
+      if (setting.key === "IsHardcore" && setting.value) enforceHardcore();
       render();
     });
     label.appendChild(input);
@@ -996,6 +997,7 @@
     state.settings.forEach(function (setting) { setting.value = setting.original; });
     state.experiments.forEach(function (row) { row.on = row.original; });
     state.packs.forEach(function (pack) { pack.on = pack.originalOn; });
+    if (isHardcore()) enforceHardcore();
     render();
   });
 
@@ -1010,7 +1012,7 @@
     };
   }
 
-  function entriesWithChanges(level) {
+  function entriesWithChanges(level, databaseBytes) {
     var packBytes = new Map();
     state.packs.forEach(function (pack) {
       if (!packChanged(pack) || !pack.entry) return;
@@ -1020,8 +1022,87 @@
 
     return state.zip.map(function (entry) {
       if (entry === state.levelEntry) return storedEntry(entry, level);
+      if (databaseBytes && databaseBytes.has(entry)) return storedEntry(entry, databaseBytes.get(entry));
       if (packBytes.has(entry)) return storedEntry(entry, packBytes.get(entry));
       return entry;
+    });
+  }
+
+  function databaseFileNumber(entry) {
+    var match = entry && entry.name.match(/(?:^|\/)(\d+)\.ldb$/i);
+    return match ? Number(match[1]) : null;
+  }
+
+  function rewriteHardcorePlayerDatabase() {
+    var changes = new Map();
+    if (!isHardcore()) return Promise.resolve(changes);
+
+    var logEntries = state.zip.filter(function (entry) { return /(?:^|\/)db\/[^/]+\.log$/i.test(entry.name); });
+    if (logEntries.length) return Promise.reject(new Error("leveldb-log"));
+
+    var tables = state.zip.filter(function (entry) { return databaseFileNumber(entry) !== null; });
+    if (!tables.length) return Promise.resolve(changes);
+
+    return Promise.all(tables.map(function (entry) {
+      return unpackEntry(entry).then(function (bytes) {
+        return inspectPlayerLevelTable(bytes).then(function (players) {
+          return { entry: entry, bytes: bytes, players: players };
+        });
+      });
+    })).then(function (results) {
+      var newest = new Map();
+      results.forEach(function (result) {
+        result.players.forEach(function (player) {
+          var current = newest.get(player.key);
+          if (!current || player.sequence > current.player.sequence) {
+            newest.set(player.key, { result: result, player: player });
+          }
+        });
+      });
+
+      var targets = new Map();
+      newest.forEach(function (candidate) {
+        if (candidate.player.valueType === 0) return;
+        if (!targets.has(candidate.result)) targets.set(candidate.result, []);
+        targets.get(candidate.result).push(candidate.player.key);
+      });
+      if (!targets.size) return changes;
+
+      return Promise.all(Array.from(targets, function (target) {
+        var result = target[0], playerKeys = target[1];
+        return rewriteHardcorePlayerLevelTable(result.bytes, playerKeys).then(function (rewritten) {
+          return { result: result, rewritten: rewritten };
+        });
+      })).then(function (rewrittenTables) {
+        var changedTables = rewrittenTables.filter(function (table) { return table.rewritten.changed; });
+        if (!changedTables.length) return changes;
+
+        var currentEntry = state.zip.find(function (entry) { return /(?:^|\/)db\/CURRENT$/i.test(entry.name); });
+        if (!currentEntry) throw new Error("leveldb-manifest");
+        return unpackEntry(currentEntry).then(function (currentBytes) {
+          var manifestName = DEC.decode(currentBytes).trim();
+          var directory = currentEntry.name.slice(0, currentEntry.name.lastIndexOf("/") + 1);
+          var manifestEntry = state.zip.find(function (entry) {
+            return entry.name.toLowerCase() === (directory + manifestName).toLowerCase();
+          });
+          if (!manifestEntry) throw new Error("leveldb-manifest");
+
+          return unpackEntry(manifestEntry).then(function (manifestBytes) {
+            var rewrittenManifest = manifestBytes;
+            changedTables.forEach(function (table) {
+              var fileNumber = databaseFileNumber(table.result.entry);
+              rewrittenManifest = ldbPatchManifestFileSize(
+                rewrittenManifest,
+                fileNumber,
+                table.rewritten.bytes.length
+              );
+              changes.set(table.result.entry, table.rewritten.bytes);
+            });
+            changes.set(manifestEntry, rewrittenManifest);
+            return changes;
+          });
+        });
+      });
     });
   }
 
@@ -1040,6 +1121,33 @@
         }).catch(function () { return false; });
       })).then(function (results) {
         return results.every(Boolean);
+      });
+    }).catch(function () { return false; });
+  }
+
+  function verifyHardcorePlayerChanges(blob) {
+    if (!isHardcore()) return Promise.resolve(true);
+    return blob.arrayBuffer().then(function (buffer) {
+      var entries = readZip(buffer);
+      var tables = entries.filter(function (entry) { return databaseFileNumber(entry) !== null; });
+      return Promise.all(tables.map(function (entry) {
+        return unpackEntry(entry).then(function (bytes) {
+          return readHardcorePlayerAbilities(bytes);
+        });
+      })).then(function (results) {
+        var newest = new Map();
+        results.forEach(function (players) {
+          players.forEach(function (player) {
+            var current = newest.get(player.key);
+            if (!current || player.sequence > current.sequence) newest.set(player.key, player);
+          });
+        });
+        return Array.from(newest.values()).every(function (player) {
+          if (player.valueType === 0) return true;
+          return !!player.abilities && Object.keys(player.abilities).every(function (key) {
+            return player.abilities[key] === 0;
+          });
+        });
       });
     }).catch(function () { return false; });
   }
@@ -1072,9 +1180,16 @@
         throw new Error("safety-check");
       }
 
-      var blob = buildZip(entriesWithChanges(level));
-      verifyPackChanges(blob).then(function (packsOkay) {
-        if (!packsOkay) throw new Error("safety-check");
+      rewriteHardcorePlayerDatabase().then(function (databaseBytes) {
+        var blob = buildZip(entriesWithChanges(level, databaseBytes));
+        return Promise.all([
+          verifyPackChanges(blob),
+          verifyHardcorePlayerChanges(blob)
+        ]).then(function (checks) {
+          if (!checks.every(Boolean)) throw new Error("safety-check");
+          return blob;
+        });
+      }).then(function (blob) {
 
         var base = (state.worldName || "world").replace(/[^\w\- ]+/g, "").trim() || "world";
         var fileName = base + "-modified.mcworld";
@@ -1088,7 +1203,10 @@
           say("Saved " + fileName + ". The ad page was skipped because browser storage is unavailable.", false);
         });
       }).catch(function (error) {
-        say("Safety check failed, so nothing was saved. Your original file is untouched.", true);
+        var databaseError = /^leveldb-/.test(error && error.message || "");
+        say(databaseError
+          ? "This world's player data could not be updated safely, so nothing was saved. Your original file is untouched."
+          : "Safety check failed, so nothing was saved. Your original file is untouched.", true);
         console.error("[skyblue]", error);
       }).then(function () {
         el.download.disabled = false;

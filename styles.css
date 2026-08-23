@@ -475,6 +475,36 @@ a:hover{color:var(--sky-brand-press)}
   .sky-main--tools .sky-tool-list{padding-block-end:clamp(10rem,20vw,20rem)}
 }
 
+/* World editor instructions and FAQ */
+.sky-editor-info{padding-block:clamp(2.5rem,6vw,5rem)}
+.sky-editor-info+.sky-editor-info{padding-block-start:0}
+.sky-guide-card,.sky-faq-card{max-width:54rem;margin-inline:auto;padding:clamp(1.5rem,4vw,2.5rem)}
+.sky-guide-card .sky-h2,.sky-faq-card .sky-h2{margin-top:.25rem}
+.sky-guide-intro{max-width:var(--measure);margin-top:1rem}
+.sky-guide-intro code,.sky-steps code,.sky-faq-item code{
+  font-family:var(--font-mono);font-size:.9em;background:var(--sky-fill-soft);padding:.08em .3em;border-radius:2px
+}
+.sky-guide-subtitle{margin-top:1.75rem;font-size:1.125rem;line-height:1.35}
+.sky-steps{display:grid;gap:.75rem;margin:1rem 0 0;padding-left:1.5rem}
+.sky-steps li{padding-left:.25rem;max-width:var(--measure)}
+.sky-steps li::marker{color:var(--sky-brand-text);font-family:var(--font-mono);font-weight:600}
+.sky-faq-list{margin-top:1.25rem;border-top:1px solid var(--sky-fill)}
+.sky-faq-item{border-bottom:1px solid var(--sky-fill)}
+.sky-faq-item summary{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1rem 0;cursor:pointer;font-weight:600;line-height:1.4;list-style:none
+}
+.sky-faq-item summary::-webkit-details-marker{display:none}
+.sky-faq-item summary::after{
+  content:"+";display:grid;place-items:center;flex:none;width:1.75rem;height:1.75rem;
+  border-radius:var(--radius);background:var(--sky-fill-soft);color:var(--sky-brand-text);
+  font-family:var(--font-mono);font-size:1.25rem;font-weight:400;transition:transform var(--dur-fast) var(--ease)
+}
+.sky-faq-item[open] summary::after{transform:rotate(45deg)}
+.sky-faq-item summary:hover{color:var(--sky-brand-text)}
+.sky-faq-item summary:focus-visible{outline:2px solid var(--sky-brand-text);outline-offset:4px}
+.sky-faq-item p{max-width:var(--measure);padding:0 2.75rem 1.25rem 0;color:rgba(6,36,48,.76)}
+
 /* video cards */
 .sky-vids{display:grid;grid-template-columns:1fr;gap:1.25rem;margin-top:1.75rem;
   list-style:none;padding:0}
