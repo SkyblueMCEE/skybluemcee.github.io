@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>World settings editor</title>
+<title>Minecraft World Settings Editor (.mcworld) | SkyblueMC</title>
 <meta name="description" content="World settings editor for Minecraft Education and Bedrock. Turn experimental features on or off in any world — runs in your browser, never uploaded.">
 <link rel="icon" href="../../assets/logo.png">
 <link rel="stylesheet" href="../../styles.css">
@@ -39,7 +39,7 @@
   </header>
   <!-- HEADER:END -->
 
-  <main class="sky-main">
+  <main class="sky-main sky-main--editor">
 
     <section class="sky-hero">
       <div class="sky-wrap">
@@ -108,6 +108,62 @@
         <div class="sky-dl">
           <button class="sky-btn sky-btn-lg" id="download" type="button">Save a new copy</button>
           <p class="sky-aftercare">Saving opens a short Linkvertise ad page. Your modified world stays in this browser and is never uploaded. Your original file is untouched.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sky-sec sky-editor-info" aria-labelledby="instructions-h">
+      <div class="sky-wrap">
+        <div class="sky-card sky-guide-card">
+          <span class="sky-kicker">Using the editor</span>
+          <h2 class="sky-h2" id="instructions-h">Instructions</h2>
+          <p class="sky-guide-intro">Open a <code>.mcworld</code> file and change its game mode, difficulty, cheats, player permissions, world options, gamerules, experimental features, and enabled packs. Everything is processed locally in your browser.</p>
+
+          <h3 class="sky-guide-subtitle">How it works</h3>
+          <ol class="sky-steps">
+            <li>Export or locate your Minecraft world as a <code>.mcworld</code> file.</li>
+            <li>Open it in the editor and change the settings you need.</li>
+            <li>Save a modified copy and import it back into Minecraft.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="sky-sec sky-editor-info" aria-labelledby="faq-h">
+      <div class="sky-wrap">
+        <div class="sky-card sky-faq-card">
+          <span class="sky-kicker">Common questions</span>
+          <h2 class="sky-h2" id="faq-h">Frequently asked questions</h2>
+          <div class="sky-faq-list">
+            <details class="sky-faq-item">
+              <summary>Does my world get uploaded?</summary>
+              <p>No. Your world is opened and modified locally in your browser. The editor downloads a new copy and leaves your original file untouched.</p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>Which Minecraft versions are supported?</summary>
+              <p>The editor is designed for Minecraft Bedrock Edition and Minecraft Education worlds exported as <code>.mcworld</code> files. Java Edition worlds are not supported. World formats can change between releases, so keep a backup and test the modified copy before relying on it.</p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>Can this enable cheats and coordinates?</summary>
+              <p>Yes. Cheats are available under Player access, and Show coordinates is under World options. Hardcore worlds keep cheats disabled because that is part of Hardcore mode.</p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>Why do I only see certain experiment tags?</summary>
+              <p>Minecraft only stores experiment tags that have been added to that world. The “In this world” list shows those stored tags, while “Available to add” contains known tags that the editor can add. The experiments used by Minecraft vary between versions.</p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>Does disabling an experiment undo blocks or features already used?</summary>
+              <p>No. Disabling a tag does not remove blocks, entities, or other experimental content already saved in the world. That content may stop working correctly when the experiment is disabled, so make a backup first.</p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>Will changing the seed regenerate existing chunks?</summary>
+              <p>No. Existing chunks stay as they are. The new seed only affects terrain generated in chunks that have not been visited before.</p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>Can I use the editor on mobile or Chromebook?</summary>
+              <p>Yes, in a modern browser that can open and download local files. The exact steps for importing the modified file back into Minecraft depend on your device and browser.</p>
+            </details>
+          </div>
         </div>
       </div>
     </section>

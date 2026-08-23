@@ -513,7 +513,7 @@
   }
 
   function isHardcore() {
-    var setting = settingByKey("hardcore");
+    var setting = settingByKey("IsHardcore");
     return !!(setting && setting.value);
   }
 
@@ -619,7 +619,7 @@
     if (locked) input.title = "Turn off Hardcore before changing this setting.";
     input.addEventListener("change", function () {
       setting.value = input.checked;
-      if (setting.key === "hardcore" && setting.value) enforceHardcore();
+      if (setting.key === "IsHardcore" && setting.value) enforceHardcore();
       render();
     });
     label.appendChild(input);

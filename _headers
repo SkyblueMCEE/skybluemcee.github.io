@@ -1,0 +1,6 @@
+# Prevent the Cloudflare Pages test site and all branch previews from appearing in search results.
+https://skyblue-preview.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
+
+https://:preview.skyblue-preview.pages.dev/*
+  X-Robots-Tag: noindex, nofollow

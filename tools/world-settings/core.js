@@ -78,7 +78,7 @@ const WORLD_SETTING_GROUPS = [
         options: [{ value: 0, label: "Survival" }, { value: 1, label: "Creative" }, { value: 2, label: "Adventure" }] },
       { key: "Difficulty", label: "Difficulty", description: "Controls hostile mobs, damage, and hunger.", kind: "select", nbtType: T_INT, defaultValue: 2,
         options: [{ value: 0, label: "Peaceful" }, { value: 1, label: "Easy" }, { value: 2, label: "Normal" }, { value: 3, label: "Hard" }] },
-      { key: "hardcore", label: "Hardcore", description: "Locks the world to Survival on Hard difficulty with cheats off.", kind: "boolean", nbtType: T_BYTE, defaultValue: false },
+      { key: "IsHardcore", legacyKeys: ["hardcore"], label: "Hardcore", description: "Locks the world to Survival on Hard difficulty with cheats off.", kind: "boolean", nbtType: T_BYTE, defaultValue: false },
       { key: "RandomSeed", label: "World seed", description: "Read directly from level.dat as a signed 64-bit number. Changing it only affects chunks generated later.", kind: "long", nbtType: T_LONG, defaultValue: "0", min: "-9223372036854775808", max: "9223372036854775807" },
       { key: "ForceGameType", label: "Force default game mode", description: "Forces joining players back into the world's default mode.", kind: "boolean", nbtType: T_BYTE, defaultValue: false }
     ]
@@ -256,19 +256,29 @@ function normalizedSettingValue(setting, value) {
 function readWorldSettings(root) {
   const map = root.value;
   return worldSettingDefinitions().map(setting => {
-    const entry = map.get(setting.key);
+    const canonicalEntry = map.get(setting.key);
+    const legacyKey = (setting.legacyKeys || []).find(key => map.has(key));
+    const legacyEntry = legacyKey ? map.get(legacyKey) : null;
+    const preferEnabledLegacy = setting.kind === "boolean" && legacyEntry && Number(legacyEntry.value) !== 0 &&
+      (!canonicalEntry || Number(canonicalEntry.value) === 0);
+    const entry = preferEnabledLegacy ? legacyEntry : (canonicalEntry || legacyEntry);
     const value = normalizedSettingValue(setting, entry ? entry.value : setting.defaultValue);
     return Object.assign({}, setting, {
       value: value,
       original: value,
       existed: !!entry,
-      sourceType: entry ? entry.type : null
+      sourceType: entry ? entry.type : null,
+      needsMigration: !!legacyEntry
     });
   });
 }
 
 function settingChanged(setting) {
   return setting.value !== setting.original;
+}
+
+function settingNeedsWrite(setting) {
+  return settingChanged(setting) || !!setting.needsMigration;
 }
 
 function validateSetting(setting) {
@@ -317,9 +327,22 @@ function encodedSettingValue(setting) {
 function applyWorldSettings(root, settings) {
   const map = root.value;
   settings.forEach(setting => {
-    if (!settingChanged(setting)) return;
-    map.set(setting.key, { type: setting.nbtType, value: encodedSettingValue(setting) });
+    if (!settingNeedsWrite(setting)) return;
+    const value = encodedSettingValue(setting);
+    map.set(setting.key, { type: setting.nbtType, value: value });
+    (setting.legacyKeys || []).forEach(key => map.delete(key));
+
+    // Bedrock stores the cheats state in both fields. Keep them synchronized.
+    if (setting.key === "commandsEnabled") {
+      map.set("cheatsEnabled", { type: T_BYTE, value: value ? 1 : 0 });
+    }
   });
+
+  const hardcore = settings.find(setting => setting.key === "IsHardcore");
+  if (hardcore && settingNeedsWrite(hardcore) && hardcore.value) {
+    map.set("cheatsEnabled", { type: T_BYTE, value: 0 });
+    map.set("commandsEnabled", { type: T_BYTE, value: 0 });
+  }
 }
 
 function applySelection(root, rows) {
@@ -368,9 +391,19 @@ function verifyRoundTrip(bytes, rows, settings) {
 
   const map = doc.root.value;
   for (const setting of settings || []) {
-    if (!settingChanged(setting)) continue;
+    if (!settingNeedsWrite(setting)) continue;
     const entry = map.get(setting.key);
     if (!entry || entry.type !== setting.nbtType || entry.value !== encodedSettingValue(setting)) return false;
+    if ((setting.legacyKeys || []).some(key => map.has(key))) return false;
+    if (setting.key === "commandsEnabled") {
+      const cheats = map.get("cheatsEnabled");
+      if (!cheats || cheats.type !== T_BYTE || cheats.value !== (setting.value ? 1 : 0)) return false;
+    }
+    if (setting.key === "IsHardcore" && setting.value) {
+      const cheats = map.get("cheatsEnabled"), commands = map.get("commandsEnabled");
+      if (!cheats || cheats.type !== T_BYTE || cheats.value !== 0) return false;
+      if (!commands || commands.type !== T_BYTE || commands.value !== 0) return false;
+    }
   }
   return true;
 }
