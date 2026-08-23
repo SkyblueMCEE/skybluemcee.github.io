@@ -463,6 +463,7 @@
           state.worldName = loaded[0];
           state.experiments = buildExperimentRows(experimentsOf(doc.root));
           state.settings = readWorldSettings(doc.root);
+          if (isHardcore()) enforceHardcore();
           state.packs = loaded[1];
           state.activeSection = "world-setup";
           el.zone.classList.remove("is-loading");
@@ -518,7 +519,7 @@
   }
 
   function enforceHardcore() {
-    var values = { GameType: 0, Difficulty: 3, commandsEnabled: false };
+    var values = { GameType: 0, Difficulty: 3, commandsEnabled: false, ForceGameType: true };
     Object.keys(values).forEach(function (key) {
       var setting = settingByKey(key);
       if (setting) setting.value = values[key];
@@ -526,7 +527,7 @@
   }
 
   function settingIsLocked(setting) {
-    return isHardcore() && ["GameType", "Difficulty", "commandsEnabled"].indexOf(setting.key) !== -1;
+    return isHardcore() && ["GameType", "Difficulty", "commandsEnabled", "ForceGameType"].indexOf(setting.key) !== -1;
   }
 
   function packChanged(pack) {
@@ -996,6 +997,7 @@
     state.settings.forEach(function (setting) { setting.value = setting.original; });
     state.experiments.forEach(function (row) { row.on = row.original; });
     state.packs.forEach(function (pack) { pack.on = pack.originalOn; });
+    if (isHardcore()) enforceHardcore();
     render();
   });
 

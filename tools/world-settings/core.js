@@ -342,6 +342,7 @@ function applyWorldSettings(root, settings) {
   if (hardcore && settingNeedsWrite(hardcore) && hardcore.value) {
     map.set("cheatsEnabled", { type: T_BYTE, value: 0 });
     map.set("commandsEnabled", { type: T_BYTE, value: 0 });
+    map.set("ForceGameType", { type: T_BYTE, value: 1 });
   }
 }
 
@@ -401,8 +402,10 @@ function verifyRoundTrip(bytes, rows, settings) {
     }
     if (setting.key === "IsHardcore" && setting.value) {
       const cheats = map.get("cheatsEnabled"), commands = map.get("commandsEnabled");
+      const forceGameType = map.get("ForceGameType");
       if (!cheats || cheats.type !== T_BYTE || cheats.value !== 0) return false;
       if (!commands || commands.type !== T_BYTE || commands.value !== 0) return false;
+      if (!forceGameType || forceGameType.type !== T_BYTE || forceGameType.value !== 1) return false;
     }
   }
   return true;
