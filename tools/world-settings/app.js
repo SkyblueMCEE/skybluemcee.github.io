@@ -1033,7 +1033,7 @@
     return match ? Number(match[1]) : null;
   }
 
-  function rewriteHardcoreLocalPlayerDatabase() {
+  function rewriteHardcorePlayerDatabase() {
     var changes = new Map();
     if (!isHardcore()) return Promise.resolve(changes);
 
@@ -1045,21 +1045,37 @@
 
     return Promise.all(tables.map(function (entry) {
       return unpackEntry(entry).then(function (bytes) {
-        return inspectLocalPlayerLevelTable(bytes).then(function (player) {
-          return { entry: entry, bytes: bytes, player: player };
+        return inspectPlayerLevelTable(bytes).then(function (players) {
+          return { entry: entry, bytes: bytes, players: players };
         });
       });
     })).then(function (results) {
-      var candidates = results.filter(function (result) { return !!result.player; });
-      if (!candidates.length) return changes;
-      candidates.sort(function (left, right) {
-        if (left.player.sequence === right.player.sequence) return 0;
-        return left.player.sequence > right.player.sequence ? -1 : 1;
+      var newest = new Map();
+      results.forEach(function (result) {
+        result.players.forEach(function (player) {
+          var current = newest.get(player.key);
+          if (!current || player.sequence > current.player.sequence) {
+            newest.set(player.key, { result: result, player: player });
+          }
+        });
       });
 
-      var target = candidates[0];
-      return rewriteHardcoreLocalPlayerLevelTable(target.bytes).then(function (rewritten) {
-        if (!rewritten.changed) return changes;
+      var targets = new Map();
+      newest.forEach(function (candidate) {
+        if (candidate.player.valueType === 0) return;
+        if (!targets.has(candidate.result)) targets.set(candidate.result, []);
+        targets.get(candidate.result).push(candidate.player.key);
+      });
+      if (!targets.size) return changes;
+
+      return Promise.all(Array.from(targets, function (target) {
+        var result = target[0], playerKeys = target[1];
+        return rewriteHardcorePlayerLevelTable(result.bytes, playerKeys).then(function (rewritten) {
+          return { result: result, rewritten: rewritten };
+        });
+      })).then(function (rewrittenTables) {
+        var changedTables = rewrittenTables.filter(function (table) { return table.rewritten.changed; });
+        if (!changedTables.length) return changes;
 
         var currentEntry = state.zip.find(function (entry) { return /(?:^|\/)db\/CURRENT$/i.test(entry.name); });
         if (!currentEntry) throw new Error("leveldb-manifest");
@@ -1072,9 +1088,16 @@
           if (!manifestEntry) throw new Error("leveldb-manifest");
 
           return unpackEntry(manifestEntry).then(function (manifestBytes) {
-            var fileNumber = databaseFileNumber(target.entry);
-            var rewrittenManifest = ldbPatchManifestFileSize(manifestBytes, fileNumber, rewritten.bytes.length);
-            changes.set(target.entry, rewritten.bytes);
+            var rewrittenManifest = manifestBytes;
+            changedTables.forEach(function (table) {
+              var fileNumber = databaseFileNumber(table.result.entry);
+              rewrittenManifest = ldbPatchManifestFileSize(
+                rewrittenManifest,
+                fileNumber,
+                table.rewritten.bytes.length
+              );
+              changes.set(table.result.entry, table.rewritten.bytes);
+            });
             changes.set(manifestEntry, rewrittenManifest);
             return changes;
           });
@@ -1109,22 +1132,22 @@
       var tables = entries.filter(function (entry) { return databaseFileNumber(entry) !== null; });
       return Promise.all(tables.map(function (entry) {
         return unpackEntry(entry).then(function (bytes) {
-          return Promise.all([
-            inspectLocalPlayerLevelTable(bytes),
-            readHardcoreLocalPlayerAbilities(bytes)
-          ]).then(function (result) {
-            return { player: result[0], abilities: result[1] };
-          });
+          return readHardcorePlayerAbilities(bytes);
         });
       })).then(function (results) {
-        var candidates = results.filter(function (result) { return !!result.player; });
-        if (!candidates.length) return true;
-        candidates.sort(function (left, right) {
-          if (left.player.sequence === right.player.sequence) return 0;
-          return left.player.sequence > right.player.sequence ? -1 : 1;
+        var newest = new Map();
+        results.forEach(function (players) {
+          players.forEach(function (player) {
+            var current = newest.get(player.key);
+            if (!current || player.sequence > current.sequence) newest.set(player.key, player);
+          });
         });
-        var abilities = candidates[0].abilities;
-        return !!abilities && Object.keys(abilities).every(function (key) { return abilities[key] === 0; });
+        return Array.from(newest.values()).every(function (player) {
+          if (player.valueType === 0) return true;
+          return !!player.abilities && Object.keys(player.abilities).every(function (key) {
+            return player.abilities[key] === 0;
+          });
+        });
       });
     }).catch(function () { return false; });
   }
@@ -1157,7 +1180,7 @@
         throw new Error("safety-check");
       }
 
-      rewriteHardcoreLocalPlayerDatabase().then(function (databaseBytes) {
+      rewriteHardcorePlayerDatabase().then(function (databaseBytes) {
         var blob = buildZip(entriesWithChanges(level, databaseBytes));
         return Promise.all([
           verifyPackChanges(blob),

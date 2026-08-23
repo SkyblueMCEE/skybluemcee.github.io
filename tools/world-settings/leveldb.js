@@ -1,9 +1,10 @@
-/* Minimal Bedrock LevelDB table support for repairing the local player's
+/* Minimal Bedrock LevelDB table support for repairing stored players'
    Creative abilities when a world is converted to Hardcore.
 
    This deliberately does not try to be a general LevelDB implementation. It
-   preserves every existing record and table block, rewrites only
-   ~local_player, and fails closed when it encounters an unsupported layout. */
+   preserves every existing record and table block, rewrites only the newest
+   live ~local_player and player_server_* records, and fails closed when it
+   encounters an unsupported layout. */
 
 const LDB_FOOTER_SIZE = 48;
 const LDB_MAGIC = [0x57, 0xfb, 0x80, 0x8b, 0x24, 0x75, 0x47, 0xdb];
@@ -225,9 +226,10 @@ function ldbReadSequence(internalKey) {
   return { sequence: tag >> 8n, valueType: Number(tag & 0xFFn) };
 }
 
-function ldbIsLocalPlayerKey(internalKey) {
+function ldbPlayerKey(internalKey) {
   if (internalKey.length < 8) return false;
-  return DEC.decode(internalKey.subarray(0, internalKey.length - 8)) === "~local_player";
+  const key = DEC.decode(internalKey.subarray(0, internalKey.length - 8));
+  return key === "~local_player" || key.startsWith("player_server_") ? key : null;
 }
 
 function ldbReadFooter(table) {
@@ -272,24 +274,27 @@ async function ldbOpenTable(tableBytes) {
   };
 }
 
-function ldbFindLocalPlayer(layout) {
-  let best = null;
+function ldbFindPlayers(layout) {
+  const newest = new Map();
   layout.dataBlocks.forEach(dataBlock => {
     dataBlock.entries.forEach((entry, entryIndex) => {
-      if (!ldbIsLocalPlayerKey(entry.key)) return;
+      const key = ldbPlayerKey(entry.key);
+      if (!key) return;
       const internal = ldbReadSequence(entry.key);
-      if (internal.valueType === 0) return;
-      if (!best || internal.sequence > best.sequence) {
-        best = {
+      const current = newest.get(key);
+      if (!current || internal.sequence > current.sequence) {
+        newest.set(key, {
+          key: key,
           sequence: internal.sequence,
+          valueType: internal.valueType,
           dataBlock: dataBlock,
           entryIndex: entryIndex,
           value: entry.value
-        };
+        });
       }
     });
   });
-  return best;
+  return Array.from(newest.values());
 }
 
 function ldbPatchHardcorePlayerNbt(value) {
@@ -320,22 +325,21 @@ function ldbPatchHardcorePlayerNbt(value) {
   return { bytes: rebuilt, changed: changed };
 }
 
-async function inspectLocalPlayerLevelTable(tableBytes) {
+async function inspectPlayerLevelTable(tableBytes) {
   const layout = await ldbOpenTable(tableBytes);
-  const player = ldbFindLocalPlayer(layout);
-  return player ? { sequence: player.sequence } : null;
+  return ldbFindPlayers(layout).map(player => ({
+    key: player.key,
+    sequence: player.sequence,
+    valueType: player.valueType
+  }));
 }
 
-async function readHardcoreLocalPlayerAbilities(tableBytes) {
-  const layout = await ldbOpenTable(tableBytes);
-  const player = ldbFindLocalPlayer(layout);
-  if (!player) return null;
-
-  const wrapped = new Uint8Array(8 + player.value.length);
+function ldbReadPlayerAbilities(value) {
+  const wrapped = new Uint8Array(8 + value.length);
   const header = new DataView(wrapped.buffer);
   header.setInt32(0, 10, true);
-  header.setInt32(4, player.value.length, true);
-  wrapped.set(player.value, 8);
+  header.setInt32(4, value.length, true);
+  wrapped.set(value, 8);
   const root = parseLevelDat(wrapped).root.value;
   const abilities = root.get("abilities");
   if (!abilities || abilities.type !== T_COMP) throw new Error("leveldb-player");
@@ -348,24 +352,44 @@ async function readHardcoreLocalPlayerAbilities(tableBytes) {
   return output;
 }
 
-async function rewriteHardcoreLocalPlayerLevelTable(tableBytes) {
+async function readHardcorePlayerAbilities(tableBytes) {
   const layout = await ldbOpenTable(tableBytes);
-  const player = ldbFindLocalPlayer(layout);
-  if (!player) throw new Error("leveldb-player");
+  return ldbFindPlayers(layout).map(player => ({
+    key: player.key,
+    sequence: player.sequence,
+    valueType: player.valueType,
+    abilities: player.valueType === 0 ? null : ldbReadPlayerAbilities(player.value)
+  }));
+}
 
-  const patchedPlayer = ldbPatchHardcorePlayerNbt(player.value);
-  if (!patchedPlayer.changed) {
-    return { bytes: layout.table, changed: false, sequence: player.sequence };
+async function rewriteHardcorePlayerLevelTable(tableBytes, playerKeys) {
+  const layout = await ldbOpenTable(tableBytes);
+  const requested = new Set(playerKeys || []);
+  const players = ldbFindPlayers(layout).filter(player => {
+    return player.valueType !== 0 && requested.has(player.key);
+  });
+  if (players.length !== requested.size) throw new Error("leveldb-player");
+
+  const changedBlocks = new Set();
+  let changedPlayers = 0;
+  players.forEach(player => {
+    const patchedPlayer = ldbPatchHardcorePlayerNbt(player.value);
+    if (!patchedPlayer.changed) return;
+    player.dataBlock.entries[player.entryIndex].value = patchedPlayer.bytes;
+    changedBlocks.add(player.dataBlock);
+    changedPlayers++;
+  });
+  if (!changedPlayers) return { bytes: layout.table, changed: false, changedPlayers: 0 };
+
+  const replacements = new Map();
+  for (const dataBlock of changedBlocks) {
+    const raw = ldbEncodeBlock(dataBlock.entries);
+    replacements.set(dataBlock, (await ldbPackBlock(raw, dataBlock.block.type)).bytes);
   }
-
-  player.dataBlock.entries[player.entryIndex].value = patchedPlayer.bytes;
-  const targetRaw = ldbEncodeBlock(player.dataBlock.entries);
-  const targetPacked = await ldbPackBlock(targetRaw, player.dataBlock.block.type);
-  const oldTargetEnd = player.dataBlock.handle.offset + player.dataBlock.handle.size + 5;
-  const targetDelta = targetPacked.bytes.length - (player.dataBlock.handle.size + 5);
 
   const dataBlocks = layout.dataBlocks.slice().sort((left, right) => left.handle.offset - right.handle.offset);
   const replacementHandles = new Map();
+  const blockDeltas = [];
   const prefixParts = [];
   let prefixLength = 0;
   let cursor = 0;
@@ -380,20 +404,26 @@ async function rewriteHardcoreLocalPlayerLevelTable(tableBytes) {
       throw new Error("leveldb-layout");
     }
     appendPrefix(layout.table.slice(cursor, dataBlock.handle.offset));
-    const replacement = dataBlock === player.dataBlock
-      ? targetPacked.bytes
-      : layout.table.slice(dataBlock.handle.offset, dataBlock.handle.offset + dataBlock.handle.size + 5);
+    const originalLength = dataBlock.handle.size + 5;
+    const replacement = replacements.get(dataBlock)
+      || layout.table.slice(dataBlock.handle.offset, dataBlock.handle.offset + originalLength);
     replacementHandles.set(dataBlock.handle.offset, {
       offset: prefixLength,
       size: replacement.length - 5
     });
+    blockDeltas.push({
+      oldEnd: dataBlock.handle.offset + originalLength,
+      delta: replacement.length - originalLength
+    });
     appendPrefix(replacement);
-    cursor = dataBlock.handle.offset + dataBlock.handle.size + 5;
+    cursor = dataBlock.handle.offset + originalLength;
   });
   appendPrefix(layout.table.slice(cursor, layout.footer.meta.offset));
 
   function translateNonDataOffset(oldOffset) {
-    return oldOffset >= oldTargetEnd ? oldOffset + targetDelta : oldOffset;
+    return oldOffset + blockDeltas.reduce((shift, block) => {
+      return shift + (oldOffset >= block.oldEnd ? block.delta : 0);
+    }, 0);
   }
 
   const metaEntries = layout.metaEntries.map(entry => {
@@ -432,9 +462,15 @@ async function rewriteHardcoreLocalPlayerLevelTable(tableBytes) {
   newFooter.set(LDB_MAGIC, 40);
 
   const output = ldbConcat([beforeIndex, newIndexPacked.bytes, newFooter]);
-  const verified = await readHardcoreLocalPlayerAbilities(output);
-  if (!verified || Object.keys(verified).some(key => verified[key] !== 0)) throw new Error("leveldb-verify");
-  return { bytes: output, changed: true, sequence: player.sequence };
+  const verified = await readHardcorePlayerAbilities(output);
+  const verifiedByKey = new Map(verified.map(player => [player.key, player]));
+  const allVerified = players.every(player => {
+    const result = verifiedByKey.get(player.key);
+    return result && result.abilities
+      && Object.keys(result.abilities).every(key => result.abilities[key] === 0);
+  });
+  if (!allVerified) throw new Error("leveldb-verify");
+  return { bytes: output, changed: true, changedPlayers: changedPlayers };
 }
 
 function ldbPatchManifestFileSize(manifestBytes, fileNumber, newFileSize) {
