@@ -1012,7 +1012,7 @@
     };
   }
 
-  function entriesWithChanges(level) {
+  function entriesWithChanges(level, databaseBytes) {
     var packBytes = new Map();
     state.packs.forEach(function (pack) {
       if (!packChanged(pack) || !pack.entry) return;
@@ -1022,8 +1022,64 @@
 
     return state.zip.map(function (entry) {
       if (entry === state.levelEntry) return storedEntry(entry, level);
+      if (databaseBytes && databaseBytes.has(entry)) return storedEntry(entry, databaseBytes.get(entry));
       if (packBytes.has(entry)) return storedEntry(entry, packBytes.get(entry));
       return entry;
+    });
+  }
+
+  function databaseFileNumber(entry) {
+    var match = entry && entry.name.match(/(?:^|\/)(\d+)\.ldb$/i);
+    return match ? Number(match[1]) : null;
+  }
+
+  function rewriteHardcoreLocalPlayerDatabase() {
+    var changes = new Map();
+    if (!isHardcore()) return Promise.resolve(changes);
+
+    var logEntries = state.zip.filter(function (entry) { return /(?:^|\/)db\/[^/]+\.log$/i.test(entry.name); });
+    if (logEntries.length) return Promise.reject(new Error("leveldb-log"));
+
+    var tables = state.zip.filter(function (entry) { return databaseFileNumber(entry) !== null; });
+    if (!tables.length) return Promise.resolve(changes);
+
+    return Promise.all(tables.map(function (entry) {
+      return unpackEntry(entry).then(function (bytes) {
+        return inspectLocalPlayerLevelTable(bytes).then(function (player) {
+          return { entry: entry, bytes: bytes, player: player };
+        });
+      });
+    })).then(function (results) {
+      var candidates = results.filter(function (result) { return !!result.player; });
+      if (!candidates.length) return changes;
+      candidates.sort(function (left, right) {
+        if (left.player.sequence === right.player.sequence) return 0;
+        return left.player.sequence > right.player.sequence ? -1 : 1;
+      });
+
+      var target = candidates[0];
+      return rewriteHardcoreLocalPlayerLevelTable(target.bytes).then(function (rewritten) {
+        if (!rewritten.changed) return changes;
+
+        var currentEntry = state.zip.find(function (entry) { return /(?:^|\/)db\/CURRENT$/i.test(entry.name); });
+        if (!currentEntry) throw new Error("leveldb-manifest");
+        return unpackEntry(currentEntry).then(function (currentBytes) {
+          var manifestName = DEC.decode(currentBytes).trim();
+          var directory = currentEntry.name.slice(0, currentEntry.name.lastIndexOf("/") + 1);
+          var manifestEntry = state.zip.find(function (entry) {
+            return entry.name.toLowerCase() === (directory + manifestName).toLowerCase();
+          });
+          if (!manifestEntry) throw new Error("leveldb-manifest");
+
+          return unpackEntry(manifestEntry).then(function (manifestBytes) {
+            var fileNumber = databaseFileNumber(target.entry);
+            var rewrittenManifest = ldbPatchManifestFileSize(manifestBytes, fileNumber, rewritten.bytes.length);
+            changes.set(target.entry, rewritten.bytes);
+            changes.set(manifestEntry, rewrittenManifest);
+            return changes;
+          });
+        });
+      });
     });
   }
 
@@ -1042,6 +1098,33 @@
         }).catch(function () { return false; });
       })).then(function (results) {
         return results.every(Boolean);
+      });
+    }).catch(function () { return false; });
+  }
+
+  function verifyHardcorePlayerChanges(blob) {
+    if (!isHardcore()) return Promise.resolve(true);
+    return blob.arrayBuffer().then(function (buffer) {
+      var entries = readZip(buffer);
+      var tables = entries.filter(function (entry) { return databaseFileNumber(entry) !== null; });
+      return Promise.all(tables.map(function (entry) {
+        return unpackEntry(entry).then(function (bytes) {
+          return Promise.all([
+            inspectLocalPlayerLevelTable(bytes),
+            readHardcoreLocalPlayerAbilities(bytes)
+          ]).then(function (result) {
+            return { player: result[0], abilities: result[1] };
+          });
+        });
+      })).then(function (results) {
+        var candidates = results.filter(function (result) { return !!result.player; });
+        if (!candidates.length) return true;
+        candidates.sort(function (left, right) {
+          if (left.player.sequence === right.player.sequence) return 0;
+          return left.player.sequence > right.player.sequence ? -1 : 1;
+        });
+        var abilities = candidates[0].abilities;
+        return !!abilities && Object.keys(abilities).every(function (key) { return abilities[key] === 0; });
       });
     }).catch(function () { return false; });
   }
@@ -1074,9 +1157,16 @@
         throw new Error("safety-check");
       }
 
-      var blob = buildZip(entriesWithChanges(level));
-      verifyPackChanges(blob).then(function (packsOkay) {
-        if (!packsOkay) throw new Error("safety-check");
+      rewriteHardcoreLocalPlayerDatabase().then(function (databaseBytes) {
+        var blob = buildZip(entriesWithChanges(level, databaseBytes));
+        return Promise.all([
+          verifyPackChanges(blob),
+          verifyHardcorePlayerChanges(blob)
+        ]).then(function (checks) {
+          if (!checks.every(Boolean)) throw new Error("safety-check");
+          return blob;
+        });
+      }).then(function (blob) {
 
         var base = (state.worldName || "world").replace(/[^\w\- ]+/g, "").trim() || "world";
         var fileName = base + "-modified.mcworld";
@@ -1090,7 +1180,10 @@
           say("Saved " + fileName + ". The ad page was skipped because browser storage is unavailable.", false);
         });
       }).catch(function (error) {
-        say("Safety check failed, so nothing was saved. Your original file is untouched.", true);
+        var databaseError = /^leveldb-/.test(error && error.message || "");
+        say(databaseError
+          ? "This world's player data could not be updated safely, so nothing was saved. Your original file is untouched."
+          : "Safety check failed, so nothing was saved. Your original file is untouched.", true);
         console.error("[skyblue]", error);
       }).then(function () {
         el.download.disabled = false;
