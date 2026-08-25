@@ -128,8 +128,8 @@
       </div>
     </section>
 
-    <section class="sky-sec" aria-labelledby="sites-h">
-      <div class="sky-wrap sky-resource-section">
+    <section class="sky-sec" id="recommended-sites" aria-labelledby="sites-h">
+      <div class="sky-wrap">
         <span class="sky-kicker">Recommended sources</span>
         <h2 class="sky-h2" id="sites-h">Start with these sites</h2>
         <p class="sky-resource-click-hint">Click any card to open that site.</p>
@@ -140,13 +140,12 @@
               <img class="sky-resource-icon" src="../../assets/grass-block.png" alt="" width="64" height="75">
               <div class="sky-trust-row">
                 <span class="sky-trust-badge sky-trust-badge--official">Official</span>
-                <span class="sky-trust-badge">Education</span>
               </div>
             </div>
             <h3>Minecraft Education Add-Ons Collection</h3>
             <p class="sky-resource-best">Best first choice for Education Edition</p>
-            <p class="sky-resource-copy">Minecraft Education's own collection contains classroom-friendly add-ons with Education-specific download and usage information.</p>
-            <p class="sky-resource-caution"><strong>Keep in mind:</strong> It is the smallest collection here and focuses more on education than general survival content.</p>
+            <p class="sky-resource-copy">Minecraft Education's official add-on collection for classrooms.</p>
+            <p class="sky-resource-caution">For classrooms and other educational environments. Focuses on learning rather than entertainment.</p>
             <span class="sky-btn sky-btn-quiet">Open the official collection <span aria-hidden="true">→</span></span>
           </a>
 
@@ -155,13 +154,12 @@
               <img class="sky-resource-icon" src="../../assets/grass-block.png" alt="" width="64" height="75">
               <div class="sky-trust-row">
                 <span class="sky-trust-badge sky-trust-badge--official">Official</span>
-                <span class="sky-trust-badge">Bedrock</span>
               </div>
             </div>
             <h3>Minecraft Marketplace Add-Ons</h3>
             <p class="sky-resource-best">Safest integrated choice for Bedrock Edition</p>
-            <p class="sky-resource-copy">Marketplace add-ons come from Minecraft community creator partners and install through Minecraft. The collection includes both free and paid content.</p>
-            <p class="sky-resource-caution"><strong>Keep in mind:</strong> Marketplace content is intended for Bedrock Edition. Do not assume a Marketplace purchase can be installed in Minecraft Education.</p>
+            <p class="sky-resource-copy">Minecraft's official marketplace for free and paid Bedrock add-ons.</p>
+            <p class="sky-resource-caution">For Bedrock Edition players. Marketplace add-ons may not work in Minecraft Education.</p>
             <span class="sky-btn sky-btn-quiet">Open Marketplace add-ons <span aria-hidden="true">→</span></span>
           </a>
 
@@ -170,13 +168,13 @@
               <img class="sky-resource-icon" src="../../assets/grass-block.png" alt="" width="64" height="75">
               <div class="sky-trust-row">
                 <span class="sky-trust-badge">Moderated community</span>
-                <span class="sky-trust-badge">Bedrock</span>
               </div>
             </div>
             <h3>CurseForge Bedrock Addons</h3>
             <p class="sky-resource-best">Best large community directory</p>
-            <p class="sky-resource-copy">CurseForge has a dedicated Bedrock section, creator profiles, version information, moderation, and automated file-processing checks.</p>
-            <p class="sky-resource-caution"><strong>Keep in mind:</strong> Community uploads are not guaranteed to work in Education. Confirm the author, update date, file type, and supported game version.</p>
+            <p class="sky-resource-copy">A moderated collection of Bedrock add-ons from independent creators.</p>
+            <p class="sky-resource-caution">For players who want more variety. Check the supported game version before downloading.</p>
+            <p class="sky-resource-warning"><strong>Be careful!</strong> Avoid clicking ads or installing anything they promote. They may lead to unsafe or malicious downloads.</p>
             <span class="sky-btn sky-btn-quiet">Open Bedrock on CurseForge <span aria-hidden="true">→</span></span>
           </a>
 
@@ -185,13 +183,13 @@
               <img class="sky-resource-icon" src="../../assets/grass-block.png" alt="" width="64" height="75">
               <div class="sky-trust-row">
                 <span class="sky-trust-badge">Community</span>
-                <span class="sky-trust-badge">Bedrock</span>
               </div>
             </div>
             <h3>MCPEDL</h3>
             <p class="sky-resource-best">Large Bedrock-focused selection</p>
-            <p class="sky-resource-copy">MCPEDL has hosted Bedrock add-ons, maps, textures, and skins for many years. The real address is exactly <strong>mcpedl.com</strong>.</p>
-            <p class="sky-resource-caution"><strong>Use extra care:</strong> Downloads may be hosted on another site or pass through advertising. Do not install programs, extensions, or notification prompts. Look-alike domains are not the same site.</p>
+            <p class="sky-resource-copy">A large community site for Bedrock add-ons, maps, textures, and skins.</p>
+            <p class="sky-resource-caution">For community-made content. Downloads may pass through ads, so check the final file.</p>
+            <p class="sky-resource-warning"><strong>Be careful!</strong> Avoid clicking ads or installing anything they promote. They may lead to unsafe or malicious downloads.</p>
             <span class="sky-btn sky-btn-quiet">Open MCPEDL.com <span aria-hidden="true">→</span></span>
           </a>
         </div>
@@ -200,63 +198,50 @@
 
     <section class="sky-sec" aria-labelledby="safe-h">
       <div class="sky-wrap">
-        <div class="sky-resource-divider" role="separator" aria-label="Safety and compatibility information">
-          <span aria-hidden="true">Safety &amp; compatibility information</span>
+        <div class="sky-resource-divider sky-resource-divider--wide" role="separator" aria-label="Before you download">
+          <span aria-hidden="true">Before you download</span>
         </div>
-        <div class="sky-card sky-resource-section">
+        <div class="sky-card sky-resource-section sky-resource-section--wide">
           <span class="sky-kicker">Download safely</span>
           <h2 class="sky-h2" id="safe-h">Check these things before opening a file</h2>
-          <ul class="sky-safety-list">
-            <li><strong>Read the address bar.</strong> Scam sites often copy a trusted site's name with a different ending or misspelling.</li>
-            <li><strong>Expect Minecraft files.</strong> Add-ons normally arrive as <code>.mcaddon</code> or <code>.mcpack</code>; maps may use <code>.mcworld</code>. Some creators use <code>.zip</code>, but an add-on should not require an <code>.exe</code> or <code>.msi</code> installer.</li>
-            <li><strong>Check the creator and update date.</strong> Prefer the original creator's page, recent files, clear installation instructions, and useful comments or reviews.</li>
-            <li><strong>Do not grant unrelated permissions.</strong> A pack download does not need browser notifications, a browser extension, remote access, or your Microsoft password.</li>
-            <li><strong>Scan unexpected files.</strong> Keep Microsoft Defender or another reputable security tool enabled. Cancel the download if the file is not what the page promised.</li>
-            <li><strong>Back up your world.</strong> Even a harmless add-on can break a world when it is outdated or incompatible.</li>
-          </ul>
-          <div class="sky-resource-callout">
-            <p><strong>About ad pages:</strong> An ad or link-shortener page does not automatically mean the add-on is malicious. Never install anything or grant permissions on that page, though—the final download should still be the expected Minecraft pack or world file.</p>
-            <p><strong>No community download site can guarantee every upload is safe.</strong> These recommendations reduce risk; they do not replace checking the file and creator yourself.</p>
+          <ol class="sky-safety-list sky-safety-list--compact sky-safety-steps">
+            <li><strong>Read the address bar to confirm you're on the correct site.</strong></li>
+            <li><strong>ONLY download <code>.mcaddon</code>, <code>.mcpack</code>, or <code>.mcworld</code>. Be cautious with <code>.zip</code>; NEVER download <code>.exe</code> or <code>.msi</code>.</strong></li>
+            <li><strong>Check the creator, update date, supported version, and reviews.</strong></li>
+            <li><strong>NEVER allow notifications, extensions, remote access, or account logins.</strong></li>
+            <li><strong>Keep Microsoft Defender enabled and cancel unexpected downloads.</strong></li>
+            <li><strong>Back up your world before installing an add-on.</strong></li>
+          </ol>
+          <div class="sky-resource-callout sky-resource-callout--compact">
+            <p><strong>Ad pages:</strong> Never install anything or grant permissions on them.</p>
+            <p><strong>Community uploads are not guaranteed safe.</strong> Check the file and creator before opening it.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="sky-sec" aria-labelledby="avoid-h">
+    <section class="sky-sec" aria-labelledby="faq-h">
       <div class="sky-wrap">
-        <div class="sky-card sky-resource-section">
-          <span class="sky-kicker">Warning signs</span>
-          <h2 class="sky-h2" id="avoid-h">Leave the page if it asks you to…</h2>
-          <ul class="sky-safety-list sky-danger-list">
-            <li>Download an executable “mod installer,” “Minecraft updater,” or unknown app.</li>
-            <li>Install a browser extension or allow notifications before you can download.</li>
-            <li>Enter your Microsoft, school, Minecraft, Discord, or email password.</li>
-            <li>Disable antivirus protection or ignore a malware warning.</li>
-            <li>Download a Java <code>.jar</code> file for Minecraft Education or Bedrock.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="sky-sec" aria-labelledby="compat-h">
-      <div class="sky-wrap">
-        <div class="sky-card sky-resource-section">
-          <span class="sky-kicker">Education compatibility</span>
-          <h2 class="sky-h2" id="compat-h">A safe add-on can still be incompatible</h2>
-          <ul class="sky-safety-list">
-            <li>Compare the add-on's supported Bedrock version with the version shown in Minecraft Education.</li>
-            <li>Install both the behavior pack and resource pack when the creator provides both.</li>
-            <li>Read whether the add-on requires experiments, Beta APIs, or a newer Script API.</li>
-            <li>Test it in a copy of your world before using it in an important project.</li>
-          </ul>
-          <div class="sky-resource-explanation">
-            <h3>Why compatibility varies</h3>
-            <p>Minecraft Bedrock and Minecraft Education use add-ons made from behavior packs and resource packs. Files made for Java Edition loaders such as Forge, Fabric, or NeoForge will not work.</p>
-            <p>Minecraft Education uses the Bedrock add-on system, but it can run a different game version. A Bedrock add-on is therefore not automatically compatible with Education.</p>
-            <span class="sky-reviewed">Last reviewed: August 25, 2026</span>
-          </div>
-          <div class="sky-resource-callout">
-            <p>Need to enable a required experiment or inspect the world's enabled packs? Use the <a href="../../tools/world-settings/">Minecraft World Settings Editor</a>.</p>
+        <div class="sky-card sky-resource-section sky-resource-section--wide sky-faq-card">
+          <span class="sky-kicker">Common questions</span>
+          <h2 class="sky-h2" id="faq-h">Add-on FAQ</h2>
+          <div class="sky-faq-list">
+            <details class="sky-faq-item">
+              <summary>How do I enable experimental features such as Beta APIs?</summary>
+              <p><a href="https://youtu.be/GEIOZxy0T_w" target="_blank" rel="noopener">Watch my guide to enabling experimental features in Minecraft.</a></p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>What should I do before enabling an add-on?</summary>
+              <p>Make a backup of your world!</p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>What if the add-on isn't compatible with my Minecraft version?</summary>
+              <p>If you're using Minecraft Education, try the add-on in <a href="https://apps.microsoft.com/detail/9pk8j8rz7xqc?hl=en-US&amp;gl=CA" target="_blank" rel="noopener">Minecraft Preview</a>. Otherwise, look for a previous version of the add-on that supports your Minecraft version.</p>
+            </details>
+            <details class="sky-faq-item">
+              <summary>Why doesn't my .jar file work?</summary>
+              <p><code>.jar</code> files are mods for Minecraft Java Edition. For Minecraft Education or Bedrock add-ons, browse the <a href="#recommended-sites">recommended sites above</a>.</p>
+            </details>
           </div>
         </div>
       </div>
