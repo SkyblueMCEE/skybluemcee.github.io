@@ -347,8 +347,18 @@
       <p>No uploads and no accounts.</p>
       <p>Built on the Minecraft Bedrock community's NBT and level.dat documentation. Not affiliated with Mojang or Microsoft.</p>
       <p><a href="https://github.com/SkyblueMCEE/skybluemcee.github.io">View source on GitHub</a></p>
+      <p><button class="sky-cookie-manage" type="button" data-analytics-consent-manage hidden>Cookie choices</button></p>
     </div>
   </footer>
+  <div class="sky-cookie-banner" data-analytics-consent hidden role="dialog" aria-modal="false" aria-labelledby="sky-cookie-title" aria-describedby="sky-cookie-copy">
+    <p class="sky-cookie-title" id="sky-cookie-title">Optional analytics cookies</p>
+    <p class="sky-cookie-copy" id="sky-cookie-copy">Google Analytics helps us understand which pages people use. It loads only if you accept, and declining will not affect the site.</p>
+    <div class="sky-cookie-actions">
+      <button class="sky-btn" type="button" data-analytics-consent-accept>Accept analytics</button>
+      <button class="sky-btn sky-btn-quiet" type="button" data-analytics-consent-decline>Decline</button>
+    </div>
+  </div>
+  <script defer src="../assets/site-analytics.js"></script>
   <!-- Cloudflare Web Analytics -->
   <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"112a7e2ab081439db0b947a1e5b2f07b"}'></script>
   <!-- End Cloudflare Web Analytics -->

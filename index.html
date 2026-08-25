@@ -83,7 +83,7 @@
       <div class="sky-wrap">
         <h2 class="vh" id="choose-h">Choose where to go</h2>
 
-        <div class="sky-choices">
+        <div class="sky-choices sky-choices--three">
 
           <a class="sky-choice" href="tools/">
             <span class="sky-choice-frame">
@@ -109,6 +109,18 @@
             </span>
           </a>
 
+          <a class="sky-choice" href="guides/trusted-mod-sites/">
+            <span class="sky-choice-frame">
+              <svg class="sky-choice-svg" viewBox="0 0 560 250" aria-hidden="true">
+                <use class="sky-choice-path" href="#cloud-zone"/>
+              </svg>
+              <span class="sky-choice-inner">
+                <span class="sky-choice-title">Add-on sites</span>
+                <span class="sky-choice-sub">Safer add-ons for Bedrock &amp; Education</span>
+              </span>
+            </span>
+          </a>
+
         </div>
       </div>
     </section>
@@ -121,8 +133,18 @@
       <p>No uploads and no accounts.</p>
       <p>Built on the Minecraft Bedrock community's NBT and level.dat documentation. Not affiliated with Mojang or Microsoft.</p>
       <p><a href="https://github.com/SkyblueMCEE/skybluemcee.github.io">View source on GitHub</a></p>
+      <p><button class="sky-cookie-manage" type="button" data-analytics-consent-manage hidden>Cookie choices</button></p>
     </div>
   </footer>
+  <div class="sky-cookie-banner" data-analytics-consent hidden role="dialog" aria-modal="false" aria-labelledby="sky-cookie-title" aria-describedby="sky-cookie-copy">
+    <p class="sky-cookie-title" id="sky-cookie-title">Optional analytics cookies</p>
+    <p class="sky-cookie-copy" id="sky-cookie-copy">Google Analytics helps us understand which pages people use. It loads only if you accept, and declining will not affect the site.</p>
+    <div class="sky-cookie-actions">
+      <button class="sky-btn" type="button" data-analytics-consent-accept>Accept analytics</button>
+      <button class="sky-btn sky-btn-quiet" type="button" data-analytics-consent-decline>Decline</button>
+    </div>
+  </div>
+  <script defer src="./assets/site-analytics.js"></script>
   <!-- Cloudflare Web Analytics -->
   <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"112a7e2ab081439db0b947a1e5b2f07b"}'></script>
   <!-- End Cloudflare Web Analytics -->
