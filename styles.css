@@ -307,9 +307,10 @@ a:hover{color:var(--sky-brand-press)}
 .sky-foot-links{display:flex;flex-wrap:wrap;gap:.5rem 1rem}
 .sky-foot-links a{font-weight:600}
 .sky-cookie-manage{
-  appearance:none;border:0;padding:0;background:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer
+  appearance:none;border:0;padding:0;background:none;color:inherit;font:inherit;text-decoration:underline;
+  text-decoration-thickness:1px;text-underline-offset:2px;cursor:pointer;transition:color var(--dur-base) var(--ease)
 }
-.sky-cookie-manage:hover{color:var(--sky-white)}
+.sky-cookie-manage:hover{color:var(--sky-brand-press)}
 .sky-cookie-manage:focus-visible{outline:2px solid var(--sky-white);outline-offset:3px}
 .sky-cookie-banner{
   position:fixed;z-index:50;left:1rem;right:1rem;bottom:1rem;max-width:42rem;margin-inline:auto;
