@@ -304,6 +304,8 @@ a:hover{color:var(--sky-brand-press)}
 
 /* footer */
 .sky-foot-in{display:flex;flex-direction:column;gap:.5rem;font-size:.875rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.35)}
+.sky-foot-links{display:flex;flex-wrap:wrap;gap:.5rem 1rem}
+.sky-foot-links a{font-weight:600}
 .sky-cookie-manage{
   appearance:none;border:0;padding:0;background:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer
 }
@@ -320,6 +322,25 @@ a:hover{color:var(--sky-brand-press)}
 .sky-cookie-actions .sky-btn{background:var(--sky-brand-press);color:var(--sky-white);box-shadow:none}
 .sky-cookie-actions .sky-btn-quiet{background:var(--sky-fill-soft);color:var(--sky-ink)}
 .sky-cookie-banner[hidden],.sky-cookie-manage[hidden]{display:none}
+
+/* information, policy, and contact pages */
+.sky-main--info .sky-hero{padding-bottom:1.5rem}
+.sky-main--info .sky-sec{padding-block:2rem 4rem}
+.sky-info-card{max-width:52rem;margin-inline:auto}
+.sky-info-card section+section{margin-top:2rem;padding-top:2rem;border-top:1px solid var(--sky-fill)}
+.sky-info-card h2{font-size:1.375rem;line-height:1.3}
+.sky-info-card h3{margin-top:1.5rem;font-size:1.0625rem;line-height:1.4}
+.sky-info-card p{max-width:var(--measure)}
+.sky-info-card p+p,.sky-info-card h2+p,.sky-info-card h3+p{margin-top:.75rem}
+.sky-info-list{display:flex;flex-direction:column;gap:.75rem;margin-top:1rem;padding-left:1.25rem;list-style:disc}
+.sky-info-list li{max-width:var(--measure)}
+.sky-info-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.25rem}
+.sky-info-note{margin-top:1rem;padding:.875rem 1rem;border-left:3px solid var(--sky-brand-text);background:var(--sky-fill-soft)}
+.sky-contact-grid{display:grid;gap:1rem;margin-top:1.25rem}
+.sky-contact-option{padding:1rem;background:var(--sky-fill-soft);border-radius:var(--radius)}
+.sky-contact-option h3{margin:0;font-size:1rem}
+.sky-contact-option p{margin-top:.375rem;font-size:.9375rem}
+@media (min-width:768px){.sky-contact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* ---------- 6. breakpoints ---------- */
 @media (min-width:480px){

@@ -14,6 +14,7 @@
   const declineButton = document.querySelector("[data-analytics-consent-decline]");
 
   if (
+    document.documentElement.dataset.analytics === "off" ||
     location.hostname !== LIVE_HOST ||
     !/^G-[A-Z0-9]+$/.test(GA_MEASUREMENT_ID) ||
     !banner ||
