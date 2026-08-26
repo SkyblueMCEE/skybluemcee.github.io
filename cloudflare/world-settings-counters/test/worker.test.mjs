@@ -23,10 +23,12 @@ function testEnvironment() {
   };
 }
 
-function request(path, method = "GET", origin = "https://skybluemcee.github.io") {
+function request(path, method = "GET", origin = "https://skybluemcee.github.io", country = "") {
+  const headers = { Origin: origin };
+  if (country) headers["CF-IPCountry"] = country;
   return new Request("https://counter.example" + path, {
     method,
-    headers: { Origin: origin }
+    headers
   });
 }
 
@@ -79,4 +81,37 @@ test("answers CORS preflight requests", async () => {
   const response = await worker.fetch(request("/api/counts", "OPTIONS"), testEnvironment());
   assert.equal(response.status, 204);
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://skybluemcee.github.io");
+});
+
+test("requires analytics consent in the EEA, UK, and Switzerland", async () => {
+  const env = testEnvironment();
+
+  for (const country of ["DE", "NO", "GB", "CH"]) {
+    const response = await worker.fetch(
+      request("/api/analytics-region", "GET", "https://skybluemcee.github.io", country),
+      env
+    );
+    assert.equal(response.status, 200, country);
+    assert.deepEqual(await response.json(), { requiresConsent: true }, country);
+  }
+});
+
+test("does not require the European analytics prompt elsewhere", async () => {
+  const env = testEnvironment();
+
+  for (const country of ["CA", "US", "JP"]) {
+    const response = await worker.fetch(
+      request("/api/analytics-region", "GET", "https://skybluemcee.github.io", country),
+      env
+    );
+    assert.deepEqual(await response.json(), { requiresConsent: false }, country);
+  }
+});
+
+test("returns an unknown consent region when geolocation is unavailable", async () => {
+  const response = await worker.fetch(
+    request("/api/analytics-region"),
+    testEnvironment()
+  );
+  assert.deepEqual(await response.json(), { requiresConsent: null });
 });

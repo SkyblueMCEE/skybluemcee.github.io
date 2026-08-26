@@ -6,6 +6,10 @@ world settings editor. The initial migration preserves the previous totals:
 
 Live API: `https://skyblue-world-settings-counters.world-settings-counters.workers.dev`
 
+The same Worker also exposes `GET /api/analytics-region`. It returns only
+whether the site's Google Analytics consent prompt is required, based on
+Cloudflare's visitor-country metadata; it does not return the country itself.
+
 ## Deploy
 
 From this directory:

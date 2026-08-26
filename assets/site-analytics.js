@@ -6,6 +6,8 @@
   const GA_MEASUREMENT_ID = "G-8JTPTPR1NW";
   const LIVE_HOST = "skybluemcee.github.io";
   const CONSENT_KEY = "skyblue_google_analytics_consent_v1";
+  const CONSENT_REGION_KEY = "skyblue_google_analytics_region_v1";
+  const CONSENT_REGION_API = "https://skyblue-world-settings-counters.world-settings-counters.workers.dev/api/analytics-region";
   const banner = document.querySelector("[data-analytics-consent]");
   const manageButton = document.querySelector("[data-analytics-consent-manage]");
   const acceptButton = document.querySelector("[data-analytics-consent-accept]");
@@ -30,6 +32,46 @@
   const saveChoice = (choice) => {
     try { localStorage.setItem(CONSENT_KEY, choice); }
     catch { /* The choice will apply only to this page if storage is blocked. */ }
+  };
+
+  const readConsentRegion = () => {
+    try {
+      const value = sessionStorage.getItem(CONSENT_REGION_KEY);
+      if (value === "required") return true;
+      if (value === "not-required") return false;
+    } catch { /* Check Cloudflare again if session storage is unavailable. */ }
+    return null;
+  };
+
+  const saveConsentRegion = (required) => {
+    try {
+      sessionStorage.setItem(
+        CONSENT_REGION_KEY,
+        required ? "required" : "not-required"
+      );
+    } catch { /* A failed cache only causes another region check next page. */ }
+  };
+
+  const getConsentRegion = async () => {
+    const cached = readConsentRegion();
+    if (cached !== null) return cached;
+
+    try {
+      const response = await fetch(CONSENT_REGION_API, {
+        method: "GET",
+        mode: "cors",
+        credentials: "omit",
+        cache: "no-store"
+      });
+      if (!response.ok) return null;
+
+      const result = await response.json();
+      if (typeof result.requiresConsent !== "boolean") return null;
+      saveConsentRegion(result.requiresConsent);
+      return result.requiresConsent;
+    } catch {
+      return null;
+    }
   };
 
   const setBannerOpen = (open) => {
@@ -96,8 +138,29 @@
   declineButton.addEventListener("click", declineAnalytics);
   manageButton.addEventListener("click", () => setBannerOpen(true));
 
-  manageButton.hidden = false;
-  const choice = readChoice();
-  if (choice === "accepted") loadAnalytics();
-  else if (choice !== "declined") setBannerOpen(true);
+  const initializeAnalytics = async () => {
+    const choice = readChoice();
+    const consentRequired = await getConsentRegion();
+
+    if (consentRequired === true) {
+      manageButton.hidden = false;
+      if (choice === "accepted") loadAnalytics();
+      else if (choice !== "declined") setBannerOpen(true);
+      return;
+    }
+
+    // Respect a previous explicit decision even if the visitor later changes
+    // region. If geolocation fails with no prior choice, fail closed: do not
+    // load Google Analytics and do not bother the visitor with a guess.
+    if (choice === "accepted") {
+      manageButton.hidden = false;
+      loadAnalytics();
+    } else if (choice === "declined") {
+      manageButton.hidden = false;
+    } else if (consentRequired === false) {
+      loadAnalytics();
+    }
+  };
+
+  initializeAnalytics();
 })();

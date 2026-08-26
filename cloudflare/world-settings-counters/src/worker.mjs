@@ -1,5 +1,15 @@
 const COUNTER_ID = "world-settings";
 
+// Google applies its European consent requirements across the EEA, the UK,
+// and Switzerland. Keep the Worker as the source of truth so the static site
+// never needs to receive or store a visitor's country code.
+const ANALYTICS_CONSENT_COUNTRIES = new Set([
+  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
+  "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
+  "PL", "PT", "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO",
+  "GB", "CH"
+]);
+
 function allowedOrigins(env) {
   return new Set(String(env.ALLOWED_ORIGINS || "")
     .split(",")
@@ -75,6 +85,15 @@ async function increment(env, column) {
   return readCounts(env);
 }
 
+function analyticsConsentRequired(request) {
+  const country = String(
+    request.cf?.country || request.headers.get("CF-IPCountry") || ""
+  ).trim().toUpperCase();
+
+  if (!/^[A-Z]{2}$/.test(country)) return null;
+  return ANALYTICS_CONSENT_COUNTRIES.has(country);
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -88,6 +107,9 @@ export default {
 
     const url = new URL(request.url);
     try {
+      if (request.method === "GET" && url.pathname === "/api/analytics-region") {
+        return json({ requiresConsent: analyticsConsentRequired(request) }, 200, origin);
+      }
       if (request.method === "GET" && url.pathname === "/api/counts") {
         return json(await readCounts(env), 200, origin);
       }
