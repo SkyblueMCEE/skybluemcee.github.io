@@ -371,24 +371,7 @@
   <!-- FOOTER:END -->
 </div>
 
-<script>
-/* Thumbnails come from YouTube so they update automatically when you change
-   them there. If YouTube is unreachable — offline, blocked on a school
-   network, or running these files locally — each image falls back:
-   maxresdefault -> hqdefault -> the copy stored in assets/thumbs/ */
-document.querySelectorAll('img[data-fallback-1]').forEach(function (img) {
-  img.addEventListener('error', function onError() {
-    var next = img.getAttribute('data-fallback-1') || img.getAttribute('data-fallback-2');
-    if (img.getAttribute('data-fallback-1')) {
-      img.removeAttribute('data-fallback-1');
-    } else {
-      img.removeAttribute('data-fallback-2');
-      img.removeEventListener('error', onError);
-    }
-    if (next) img.src = next;
-  });
-});
-</script>
+<script defer src="../assets/thumbnail-fallback.js"></script>
 
 <script>
 /* Videos / Shorts toggle. The white thumb slides; panels swap. */
