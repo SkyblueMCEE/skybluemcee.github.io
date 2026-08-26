@@ -135,12 +135,33 @@
         <h2 class="sky-h2" id="sites-h">Start with these sites</h2>
         <p class="sky-resource-click-hint">Click any card to open that site.</p>
 
+        <div class="sky-resource-filter-wrap" data-resource-filter-wrap hidden>
+          <details class="sky-resource-filter" data-resource-filter>
+            <summary><span data-resource-filter-label>Filter sites</span></summary>
+            <div class="sky-resource-filter-panel">
+              <fieldset>
+                <legend>Minecraft edition</legend>
+                <label><input type="checkbox" value="education" data-filter-group="edition"> Education</label>
+                <label><input type="checkbox" value="bedrock" data-filter-group="edition"> Bedrock</label>
+              </fieldset>
+              <fieldset>
+                <legend>Source type</legend>
+                <label><input type="checkbox" value="official" data-filter-group="source"> Official</label>
+                <label><input type="checkbox" value="community" data-filter-group="source"> Community</label>
+              </fieldset>
+              <button class="sky-resource-filter-clear" type="button" data-resource-filter-clear>Clear filters</button>
+            </div>
+          </details>
+          <p class="sky-resource-filter-status" data-resource-filter-status aria-live="polite">Showing all 4 sites</p>
+        </div>
+
         <div class="sky-resource-grid">
-          <a class="sky-resource-card" href="https://education.minecraft.net/en-us/resources/minecraft_education_add_ons_collection" rel="noopener" aria-label="Open the official Minecraft Education Add-Ons Collection">
+          <a class="sky-resource-card" data-editions="education" data-source="official" href="https://education.minecraft.net/en-us/resources/minecraft_education_add_ons_collection" rel="noopener" aria-label="Open the official Minecraft Education Add-Ons Collection">
             <div class="sky-resource-card-top">
               <img class="sky-resource-icon" src="../../assets/grass-block.png" alt="" width="64" height="75">
               <div class="sky-trust-row">
                 <span class="sky-trust-badge sky-trust-badge--official">Official</span>
+                <span class="sky-trust-badge sky-trust-badge--edition">Education</span>
               </div>
             </div>
             <h3>Minecraft Education Add-Ons Collection</h3>
@@ -150,25 +171,28 @@
             <span class="sky-btn sky-btn-quiet">Open the official collection <span aria-hidden="true">→</span></span>
           </a>
 
-          <a class="sky-resource-card" href="https://www.minecraft.net/en-us/marketplace/category/add-ons" rel="noopener" aria-label="Open Minecraft Marketplace Add-Ons">
+          <a class="sky-resource-card" data-editions="bedrock" data-source="official" href="https://www.minecraft.net/en-us/marketplace/category/add-ons" rel="noopener" aria-label="Open Minecraft Marketplace Add-Ons">
             <div class="sky-resource-card-top">
               <img class="sky-resource-icon" src="../../assets/grass-block.png" alt="" width="64" height="75">
               <div class="sky-trust-row">
                 <span class="sky-trust-badge sky-trust-badge--official">Official</span>
+                <span class="sky-trust-badge sky-trust-badge--edition">Bedrock</span>
               </div>
             </div>
             <h3>Minecraft Marketplace Add-Ons</h3>
             <p class="sky-resource-best">Safest integrated choice for Bedrock Edition</p>
             <p class="sky-resource-copy">Minecraft's official marketplace for free and paid Bedrock add-ons.</p>
-            <p class="sky-resource-caution">For Bedrock Edition players. Marketplace add-ons may not work in Minecraft Education.</p>
+            <p class="sky-resource-caution">For Bedrock Edition players. Marketplace content installs through Minecraft and is not provided as an importable add-on file.</p>
             <span class="sky-btn sky-btn-quiet">Open Marketplace add-ons <span aria-hidden="true">→</span></span>
           </a>
 
-          <a class="sky-resource-card" href="https://www.curseforge.com/minecraft-bedrock/search?class=addons" rel="noopener" aria-label="Open CurseForge's Minecraft Bedrock add-ons directory">
+          <a class="sky-resource-card" data-editions="bedrock education" data-source="community" href="https://www.curseforge.com/minecraft-bedrock/search?class=addons" rel="noopener" aria-label="Open CurseForge's Minecraft Bedrock add-ons directory">
             <div class="sky-resource-card-top">
               <img class="sky-resource-icon" src="../../assets/grass-block.png" alt="" width="64" height="75">
               <div class="sky-trust-row">
                 <span class="sky-trust-badge">Moderated community</span>
+                <span class="sky-trust-badge sky-trust-badge--edition">Bedrock</span>
+                <span class="sky-trust-badge sky-trust-badge--edition">Education</span>
               </div>
             </div>
             <h3>CurseForge Bedrock Addons</h3>
@@ -179,11 +203,13 @@
             <span class="sky-btn sky-btn-quiet">Open Bedrock on CurseForge <span aria-hidden="true">→</span></span>
           </a>
 
-          <a class="sky-resource-card" href="https://mcpedl.com/" rel="noopener" aria-label="Open MCPEDL.com">
+          <a class="sky-resource-card" data-editions="bedrock education" data-source="community" href="https://mcpedl.com/" rel="noopener" aria-label="Open MCPEDL.com">
             <div class="sky-resource-card-top">
               <img class="sky-resource-icon" src="../../assets/grass-block.png" alt="" width="64" height="75">
               <div class="sky-trust-row">
                 <span class="sky-trust-badge">Community</span>
+                <span class="sky-trust-badge sky-trust-badge--edition">Bedrock</span>
+                <span class="sky-trust-badge sky-trust-badge--edition">Education</span>
               </div>
             </div>
             <h3>MCPEDL</h3>
@@ -193,6 +219,10 @@
             <p class="sky-resource-warning"><strong>Be careful!</strong> Avoid clicking ads or installing anything they promote. They may lead to unsafe or malicious downloads.</p>
             <span class="sky-btn sky-btn-quiet">Open MCPEDL.com <span aria-hidden="true">→</span></span>
           </a>
+        </div>
+        <div class="sky-resource-empty" data-resource-filter-empty hidden>
+          <p>No sites match those filters.</p>
+          <button class="sky-btn sky-btn-quiet" type="button" data-resource-filter-clear>Clear filters</button>
         </div>
       </div>
     </section>
@@ -248,6 +278,8 @@
       </div>
     </section>
   </main>
+
+  <script defer src="../../assets/trusted-sites-filter.js"></script>
 
   <!-- FOOTER:START -->
   <footer class="sky-footer">
